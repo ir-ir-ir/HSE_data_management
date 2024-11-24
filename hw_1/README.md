@@ -46,8 +46,7 @@
 
 ## ER-диаграмма предметной области
 
-![image](https://github.com/user-attachments/assets/bb7fd8af-db54-4152-b1b0-48fec2bcbcdf)
-
+![image](https://github.com/user-attachments/assets/0bbde1b8-e1e7-4fa4-b5c5-47856c62c92d)
 
 
      
