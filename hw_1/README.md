@@ -32,6 +32,10 @@
 
 ![image](https://github.com/user-attachments/assets/0bbde1b8-e1e7-4fa4-b5c5-47856c62c92d)
 
+## UML-диаграммы
+
+### классов
+
 
      
 
