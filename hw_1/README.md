@@ -30,11 +30,17 @@
 
 ## ER-диаграмма предметной области
 
-![image](https://github.com/user-attachments/assets/0a9b5eb5-8870-415e-a72b-57b9c6baffb1)
+![image](https://github.com/user-attachments/assets/2409dad9-1f67-412b-ac0e-f48c04c03f94)
+
 
 ## UML-диаграммы
 
 ### классов
+
+(пока нет связей)
+
+![image](https://github.com/user-attachments/assets/a650901b-5497-4a25-a221-de5b5fc6e7c4)
+
 
 
      
