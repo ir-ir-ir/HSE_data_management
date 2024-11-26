@@ -30,7 +30,7 @@
 
 ## ER-диаграмма предметной области
 
-![image](https://github.com/user-attachments/assets/0bbde1b8-e1e7-4fa4-b5c5-47856c62c92d)
+![image](https://github.com/user-attachments/assets/0a9b5eb5-8870-415e-a72b-57b9c6baffb1)
 
 ## UML-диаграммы
 
