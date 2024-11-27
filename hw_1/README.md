@@ -46,10 +46,8 @@
 
 ### use-кейсов
 
-![image](https://github.com/user-attachments/assets/4ddf4967-8273-4943-9540-31bc173e140f)
+![image](https://github.com/user-attachments/assets/1e98077a-e668-49a6-ae4d-185bab98b98e)
 
-
-     
 
 
 
