@@ -34,15 +34,11 @@
 
 ![image](https://github.com/user-attachments/assets/4d84ec9f-1903-4d6e-ad0b-4f32611288c4)
 
-
 ## UML-диаграммы
 
 ### классов
 
-(пока нет связей)
-
-![image](https://github.com/user-attachments/assets/a650901b-5497-4a25-a221-de5b5fc6e7c4)
-
+![image](https://github.com/user-attachments/assets/8717c175-b364-491f-9ca9-66eef0a2847f)
 
 ### use-кейсов
 
