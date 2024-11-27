@@ -44,6 +44,11 @@
 
 ![image](https://github.com/user-attachments/assets/9731ba86-80bf-4901-a91e-dcfb2794bd73)
 
+### последовательности
+
+![image](https://github.com/user-attachments/assets/9c03a970-a022-4f4c-8575-3b8c7a657d2b)
+
+
 
 
 
