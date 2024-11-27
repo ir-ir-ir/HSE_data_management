@@ -38,7 +38,7 @@
 
 ### классов
 
-![image](https://github.com/user-attachments/assets/8717c175-b364-491f-9ca9-66eef0a2847f)
+![image](https://github.com/user-attachments/assets/86c72b72-67a8-45a1-8bc5-f9927e3342af)
 
 ### use-кейсов
 
