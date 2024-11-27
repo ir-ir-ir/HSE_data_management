@@ -42,7 +42,9 @@
 
 ### use-кейсов
 
-![image](https://github.com/user-attachments/assets/92473037-7794-4b35-bbe6-f6440b120fba)
+![image](https://github.com/user-attachments/assets/9731ba86-80bf-4901-a91e-dcfb2794bd73)
+
+
 
 
 
