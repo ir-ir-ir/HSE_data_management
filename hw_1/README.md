@@ -46,7 +46,8 @@
 
 ### последовательности
 
-![image](https://github.com/user-attachments/assets/9c03a970-a022-4f4c-8575-3b8c7a657d2b)
+![image](https://github.com/user-attachments/assets/12e81ca3-bd58-4bf1-a9c3-0e8a9cf94b84)
+
 
 
 
