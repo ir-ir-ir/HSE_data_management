@@ -62,7 +62,7 @@
 - date - из исходных данных видно, что это дни недели, поэтому создала свой тип данных. date обязательно к заполнению, не должно быть уникальным
 - quantity - целое число > 0 (количество перевезенного груза), обязательно к заполнению, не должно быть уникальным
 - sum_of_money -  расчет в рублях, поэтому целое число > 0. Обязательно к заполнению, не должно быть уникальным
-- machinist_id, locomotive_id, cargo_id - внешние ключи, обязательны к заполнению, не должны быть уникальными. При удалении в таблицах machinist, locomotive, cargo в таблице train_ride тоже будет произведено удаление. Соответственно, при изменении - изменение в таблице train_ride. Поэтому устанавливается CASECADE.
+- machinist_id, locomotive_id, cargo_id - внешние ключи, обязательны к заполнению, не должны быть уникальными. При удалении в таблицах machinist, locomotive, cargo в таблице train_ride тоже будет произведено удаление. Соответственно, при изменении - изменение в таблице train_ride. Поэтому устанавливается CASCADE.
 
 ![image](https://github.com/user-attachments/assets/75b6a5c0-dc3a-45fb-8663-c39e9ebc30df)
 
@@ -73,6 +73,13 @@
 
 *Формулировка: Ввести в ранее созданные таблицы конкретные данные (см. прил. 1). Использовать скрипт-файл из операторов INSERT или вспомогательную утилиту.*
 
+![image](https://github.com/user-attachments/assets/ffe4cbc0-6ea6-47ca-990d-1e9d76d9a9ad)
+
+![image](https://github.com/user-attachments/assets/fb6bd723-d1e1-40ed-add8-6159422af32f)
+
+![image](https://github.com/user-attachments/assets/f561dc44-caf9-4de0-a6b6-98b4715b8e7d)
+
+![image](https://github.com/user-attachments/assets/8b10ffa0-fd34-48bf-8d58-e13eb19bd416)
 
 
 
