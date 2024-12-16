@@ -15,11 +15,12 @@
   | id | trademark | train_parking | depreciation_charges |
   |----|-----------|---------------|----------------------|
 - cargo
-  | id | name | price | warehouse | maximum_number |
-  |----|------|-------|-----------|----------------|
+  | id | cargo_name | price | warehouse | maximum_number |
+  |----|------------|-------|-----------|----------------|
 - train_ride
-  | number | date | machinist_id | locomotive_id | cargo_id | quantity | price |
-  |--------|------|--------------|---------------|----------|----------|-------|
+  | number | date | machinist_id | locomotive_id | cargo_id | quantity | sum_of_money |
+  |--------|------|--------------|---------------|----------|----------|--------------|
+
   
 Для каждой таблицы первый столбец является первичным ключом. Таблица train_ride, по мимо первичного ключа number, содержит три внешних ключа: machinist_id, locomotive_id, cargo_id.
 
@@ -28,9 +29,7 @@
 **Создание таблицы machinist**
 
 - id: not null + unique (то есть primary key)
-
 - surname, depot - текстовые поля, не должны быть уникальными, обязательны к заполнению
-
 - tax - целое число от 0 до 100, так как измеряется в %
   
 ![image](https://github.com/user-attachments/assets/9146d2bd-947f-4b99-84ef-7b9d8813a795)
@@ -38,24 +37,38 @@
 **Создание таблицы locomotive**
 
 - id: not null + unique (то есть primary key)
-
 - trademark, train_parking - текстовые поля, не должны быть уникальными, обязательны к заполнению
-
 - depreciation_charges - целое число от 0 до 100, так как измеряется в %
 
 ![image](https://github.com/user-attachments/assets/6acf4130-df1e-481a-9a55-fe86ebb03f07)
 
+**Создание таблицы cargo**
+
+- id: not null + unique (то есть primary key)
+- cargo_name, warehouse - текстовые поля, не должны быть уникальными, обязательны к заполнению
+- price - целое число > 0 (цена, исчисляемая в рублях), не должно быть уникальным, обязательно к заполнению
+- maximum_number - целое число > 0 (так как это максимальное количество), не должно быть уникальным, обязательно к заполнению
+
+![image](https://github.com/user-attachments/assets/f16a23fc-fbea-49c1-b1b6-d0955ea130ce)
+
+**Создание таблицы train_ride**
+
+- number: not null + unique (то есть primary key)
+- date - из исходных данных видно, что это дни недели, поэтому создала свой тип данных. date обязательно к заполнению, не должно быть уникальным
+- quantity - целое число > 0 (количество перевезенного груза), обязательно к заполнению, не должно быть уникальным
+- sum_of_money -  расчет в рублях, поэтому целое число > 0. Обязательно к заполнению, не должно быть уникальным
+- machinist_id, locomotive_id, cargo_id - внешние ключи, обязательны к заполнению, не должны быть уникальными. При удалении строк в таблицах machinist, locomotive, cargo строки в train_ride тоже будут удалены. Соответственно, при изменении - изменение строк в таблице train_ride. Поэтому устанавливается CASECADE.
+
+![image](https://github.com/user-attachments/assets/75b6a5c0-dc3a-45fb-8663-c39e9ebc30df)
+
+![image](https://github.com/user-attachments/assets/6ee0086b-e60c-48c5-952d-d33a43174426)
 
 
-
-
-
-## Задание №1
+## Задание №2
 *Формулировка*:
 *Решение на SQL*:
 *Результат работы в СУБД*:
 *Пояснения*:
-## Задание №2
 ## Задание №3
 ## Задание №4
 ## Задание №5
