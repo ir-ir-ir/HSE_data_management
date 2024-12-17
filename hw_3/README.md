@@ -92,11 +92,35 @@
 
 ![image](https://github.com/user-attachments/assets/4765ef3d-9068-4166-b948-2566bcfa4972)
 
-
-
-
-
 ## Задание №4
+
+*Создать запросы для вывода:
+
+a) названий всех различных депо, где работают машинисты;
+
+b) всех различных депо, где расположены грузы вместе с их стоимостью;
+
+c) всех различных марок локомотивов.*
+
+a) 
+
+![image](https://github.com/user-attachments/assets/0b2835bc-5dfe-4bf6-8c5f-74bd06820923)
+
+b) 
+
+![image](https://github.com/user-attachments/assets/9de47528-5c6c-4e0c-ab91-06b92d65fc73)
+
+c)
+
+![image](https://github.com/user-attachments/assets/11fa765a-7f64-4bd5-9426-4be9f7ccbf45)
+
+
+
+
+
+
+
+
 ## Задание №5
 ## Задание №6
 ## Задание №7
