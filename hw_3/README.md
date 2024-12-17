@@ -81,9 +81,21 @@
 
 ![image](https://github.com/user-attachments/assets/8b10ffa0-fd34-48bf-8d58-e13eb19bd416)
 
-
-
 ## Задание №3
+*Используя оператор SELECT создать запрос для вывода всех строк каждой таблицы. Проверить правильность ввода. При необходимости произвести коррекцию значений операторами INSERT, UPDATE, DELETE.*
+
+![image](https://github.com/user-attachments/assets/38f4e103-ba0e-48ce-a71b-fb0618c9ccb7)
+
+![image](https://github.com/user-attachments/assets/19187092-4b68-40ce-8f4a-ae1336d76817)
+
+![image](https://github.com/user-attachments/assets/e37b0d2c-77b6-454a-858d-90d9316015fe)
+
+![image](https://github.com/user-attachments/assets/4765ef3d-9068-4166-b948-2566bcfa4972)
+
+
+
+
+
 ## Задание №4
 ## Задание №5
 ## Задание №6
