@@ -102,7 +102,7 @@
 
 *b) всех различных депо, где расположены грузы вместе с их стоимостью;*
 
-![image](https://github.com/user-attachments/assets/9de47528-5c6c-4e0c-ab91-06b92d65fc73)
+![image](https://github.com/user-attachments/assets/1d722d32-e79b-45ca-9237-94468f2244c1)
 
 *c) всех различных марок локомотивов.*
 
