@@ -4,7 +4,7 @@
 
 *1. Реализовать хранимую процедуру, возвращающую текстовую строку, содержащую информацию о машинисте(идентификатор, фамилия, дата, локомотив и расчет последней поездки). Обработать ситуацию, когда поездок не было.*
 
-![image](https://github.com/user-attachments/assets/4378317d-8a43-45a2-b20d-1fbe7dd148b9)
+![image](https://github.com/user-attachments/assets/30f0f756-0c12-4e58-a042-b04236fe71bf)
 
 ![image](https://github.com/user-attachments/assets/25c270ba-e015-4f91-bb93-a8fd1d073fe5)
 
