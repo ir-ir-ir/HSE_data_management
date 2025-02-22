@@ -14,5 +14,7 @@
 
 *2.Добавить таблицу, содержащую списки машинистов, допущенных к управлению каждым из локомотивов. При вводе поездки проверять права машиниста.*
 
+![image](https://github.com/user-attachments/assets/86fd5dd8-1c14-4ac5-bd7d-a61b128ad593)
 
+![image](https://github.com/user-attachments/assets/a01db6e6-53a2-4ffd-a78e-eb97014e4ca8)
 
