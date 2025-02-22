@@ -18,6 +18,12 @@
 
 ![image](https://github.com/user-attachments/assets/a01db6e6-53a2-4ffd-a78e-eb97014e4ca8)
 
-![image](https://github.com/user-attachments/assets/0618ac17-bc4d-466a-9a02-8df4cdf4afcd)
+![image](https://github.com/user-attachments/assets/c4cd22a1-606f-487e-9793-60cb9d82bf3f)
+
+2 - Сваин, 2 Локомотив для него не разрешен ( ищи ошибку...
+
+![image](https://github.com/user-attachments/assets/82f88a3b-edb7-4b60-95e0-59c6e94157bd)
+
+
 
 
