@@ -18,12 +18,23 @@
 
 ![image](https://github.com/user-attachments/assets/a01db6e6-53a2-4ffd-a78e-eb97014e4ca8)
 
-![image](https://github.com/user-attachments/assets/c4cd22a1-606f-487e-9793-60cb9d82bf3f)
+![image](https://github.com/user-attachments/assets/4a7d022e-8357-4bde-8a83-fd4d2a54598e)
 
-2 - Сваин, 2 Локомотив для него не разрешен ( ищи ошибку...
+Машинист с id = 2 - Савин, вторым локомотивом могут управлять Судаков и Сергеев
 
-![image](https://github.com/user-attachments/assets/82f88a3b-edb7-4b60-95e0-59c6e94157bd)
+![image](https://github.com/user-attachments/assets/9a8e9072-8474-42c9-870f-f89d3d3620a7)
 
+![image](https://github.com/user-attachments/assets/e70e2507-fad7-4221-826b-e70df1409706)
 
+У Судакова id = 3
 
+![image](https://github.com/user-attachments/assets/cb8aa7d2-d899-4f93-9140-d0b34de473ac)
+
+![image](https://github.com/user-attachments/assets/5195b022-0e78-400e-9b71-075fa78673a7)
+
+Неправильные вводные:
+
+![image](https://github.com/user-attachments/assets/e4f8192d-3b6c-4f7e-962a-6b8f4fd0d353)
+
+*3.Реализовать триггер такой, что при вводе строки в таблице поездок, если расчет не указан, то он вычисляется* 
 
