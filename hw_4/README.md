@@ -66,6 +66,17 @@
 
 ![image](https://github.com/user-attachments/assets/98af80ed-401d-48bd-9b28-8e4b93d54577)
 
+## *4. Создать представление (view), содержащее поля: рег. номер, дата, фамилия машиниста, налог, марка локомотива, название и количество груза, расчет. Обеспечить возможность изменения взимаего налога. При этом должна быть произведен перерасчет.*
+
+**Реализация view**
+
+![image](https://github.com/user-attachments/assets/4badeca8-59d4-47d5-b258-ae0d3003af18)
+
+**Пример работы**
+
+![image](https://github.com/user-attachments/assets/d168c5e6-867a-4872-bc10-f7048d4cdf53)
+
+
 
 
 
