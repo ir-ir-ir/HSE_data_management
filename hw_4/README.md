@@ -76,6 +76,20 @@
 
 ![image](https://github.com/user-attachments/assets/d168c5e6-867a-4872-bc10-f7048d4cdf53)
 
+**Возможность изменять налог**
+
+![image](https://github.com/user-attachments/assets/b31ab844-96bd-4e22-bcb9-2056eac5a0ec)
+
+**Пример работы**
+
+![image](https://github.com/user-attachments/assets/c46abc6a-f9a1-4c31-b316-822c9baaaacb)
+
+![image](https://github.com/user-attachments/assets/28788c99-1dcc-451e-88d7-e66d0cb350d0)
+
+![image](https://github.com/user-attachments/assets/a6979738-2075-4142-bcd6-c5d045c29394)
+
+
+
 
 
 
