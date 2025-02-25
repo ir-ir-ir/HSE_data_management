@@ -78,16 +78,21 @@
 
 ![image](https://github.com/user-attachments/assets/d168c5e6-867a-4872-bc10-f7048d4cdf53)
 
+**Добавила столбец, в котором указана сумма с учетом налога**
+
+![image](https://github.com/user-attachments/assets/a410f025-83b3-4087-a6f0-85e3e6555a10)
+
 **Возможность изменять налог**
 
-![image](https://github.com/user-attachments/assets/b31ab844-96bd-4e22-bcb9-2056eac5a0ec)
+![image](https://github.com/user-attachments/assets/8ba4dffb-32d0-4b95-8d00-66b35c2a6df3)
 
 **Пример работы**
 
-![image](https://github.com/user-attachments/assets/c46abc6a-f9a1-4c31-b316-822c9baaaacb)
+![image](https://github.com/user-attachments/assets/66300451-0c3a-446c-b486-93219f45891d)
 
-![image](https://github.com/user-attachments/assets/28788c99-1dcc-451e-88d7-e66d0cb350d0)
+![image](https://github.com/user-attachments/assets/8b36a2fb-ed5f-4e58-9b11-fb75cb3e7dfc)
+
+![image](https://github.com/user-attachments/assets/9d7bd2b0-649d-4165-990a-8c34cf40a1e3)
 
 ![image](https://github.com/user-attachments/assets/a6979738-2075-4142-bcd6-c5d045c29394)
 
-// расчет поездки не сделала, так как он не зависит от налога. Из исходных данных видно, что он вычисляется как произведение количества товара и цены товара
