@@ -6,7 +6,9 @@
 
 **Реализация**
 
-![image](https://github.com/user-attachments/assets/30f0f756-0c12-4e58-a042-b04236fe71bf)
+// исходя из того, что чем позднее была поездка, тем больше у нее регистрационный номер
+
+![image](https://github.com/user-attachments/assets/d59e2a83-0faa-4dd5-88b6-e2803e8bc986)
 
 **Пример работы**
 
@@ -14,7 +16,7 @@
 
 ![image](https://github.com/user-attachments/assets/53aaf52c-b1dd-44b9-bc6f-11f09bcb5e86)
 
-![image](https://github.com/user-attachments/assets/1d0074d8-a31b-42b0-8a93-08e417d5c53d)
+![image](https://github.com/user-attachments/assets/b288af3e-5b8a-4dc4-a170-02f99e7901ef)
 
 ## *2. Добавить таблицу, содержащую списки машинистов, допущенных к управлению каждым из локомотивов. При вводе поездки проверять права машиниста.*
 
