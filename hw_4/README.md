@@ -52,7 +52,7 @@
 
 **Реализация**
 
-![image](https://github.com/user-attachments/assets/17bb3ab2-ec5e-44fd-93fe-cf5f187b49de)
+![image](https://github.com/user-attachments/assets/c3559a56-877c-4e5d-a0ed-15a0966519e9)
 
 **Пример работы**
 
