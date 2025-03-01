@@ -11,8 +11,8 @@ public class Access {
                 null, // null - используется стандартная иконка
                 options,
                 null ); // Кнопка по умолчанию
-        if (choice == 0) return "Admin";
-        else if (choice == 1) return "Guest";
+        if (choice == 0) return "admin";
+        else if (choice == 1) return "guest";
         else return null;
     }
 }

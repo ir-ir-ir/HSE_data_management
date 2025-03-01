@@ -5,8 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.*;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class GUI extends JFrame {
     private ImageIcon icon;
@@ -115,9 +114,129 @@ public class GUI extends JFrame {
         add(new JScrollPane(dataBase));
     }
 
-    private void clear() {
-        ((DefaultTableModel) dataBase.getModel()).setRowCount(0);
-        System.out.println("clear");
+    private void textOfProcedures (){
+        String createTable = """
+                CREATE OR REPLACE FUNCTION createTable()
+                AS $$
+                BEGIN
+                    -- Проверка на существование таблицы GIA
+                    IF NOT EXISTS (
+                        SELECT 1
+                        FROM information_schema.tables
+                        WHERE table_name = 'gia'
+                    ) THEN
+                        -- Создание таблицы
+                        CREATE TABLE GIA (
+                            id SERIAL PRIMARY KEY,
+                            FIO TEXT NOT NULL,
+                            City TEXT NOT NULL,
+                            School TEXT NOT NULL,
+                            AverageScore FLOAT NOT NULL,
+                            ListOfSubjects NOT NULL
+                        );
+                    END IF;
+                END;
+                $$ LANGUAGE plpgsql;
+                """;
+        String clearTable = """
+                CREATE OR REPLACE FUNCTION clearTableIfExists()
+                AS $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1
+                        FROM information_schema.tables
+                        WHERE table_name = 'gia'
+                          AND table_schema = 'public'
+                    ) THEN
+                        EXECUTE format('TRUNCATE TABLE %I', 'gia' );
+                        RAISE INFO 'Таблица очищена';
+                    ELSE
+                        RAISE INFO 'Таблица не существует';
+                    END IF;
+                END;
+                $$ LANGUAGE plpgsql;
+                """;
+        String createDB = """
+                CREATE OR REPLACE FUNCTION createDB(dbname TEXT)
+                RETURNS VOID
+                AS $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = dbname) THEN
+                    EXECUTE format('CREATE DATABASE %I', dbname);
+                    ELSE
+                        RAISE EXCEPTION 'База данных % уже существует', dbname;
+                    END IF;
+                END;
+                $$
+                LANGUAGE plpgsql;
+                """;
+        String dropDB = """
+                CREATE OR REPLACE FUNCTION dropDataBaseIfExists(dbname TEXT)
+                RETURNS VOID
+                AS $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1
+                        FROM pg_database
+                        WHERE datname = dbname
+                    ) THEN
+                    -- завершение всех активных подключений к базе данных
+                        PERFORM pg_terminate_backend(pg_stat_activity.pid)
+                        FROM pg_stat_activity
+                        WHERE pg_stat_activity.datname = dbname;
+                
+                        EXECUTE format('DROP DATABASE %I', dbname);
+                        RAISE INFO 'База данных "%" удалена.', dbname;
+                    ELSE
+                        RAISE EXCEPTION 'База данных "%" не существует.', dbname;
+                    END IF;
+                END;
+                $$ LANGUAGE plpgsql;
+                """;
+    }
+    private boolean rightToConnectForGuest(){
+        // право на подключение
+        String rightToConnect = """
+                        CREATE OR REPLACE FUNCTION rightToConnect(dbname TEXT)
+                        RETURNS void
+                        AS $$
+                        BEGIN
+                            GRANT CONNECT ON DATABASE dbname TO guest;
+                        END;
+                        $$
+                        LANGUAGE plpgsql;
+                        """;
+        try {
+            Statement st = null;
+            st = Main.current.createStatement();
+            st.execute(rightToConnect);
+            st.close();}
+        catch (SQLException ex){
+            return false;
+        }
+        return true;
+    }
+    private boolean rightToSelectForGuest(){
+        //право на просмотр
+        String rightToSelect = """
+                        CREATE OR REPLACE FUNCTION rightToSelect(dbname TEXT)
+                        RETURNS void
+                        AS $$
+                        BEGIN
+                            GRANT SELECT ON ALL TABLES IN SCHEMA public TO guest;
+                        END;
+                        $$
+                        LANGUAGE plpgsql;
+                        """;
+        try {
+            Statement st = null;
+            st = Main.current.createStatement();
+            st.execute(rightToSelect);
+            st.close();}
+        catch (SQLException ex){
+            return false;
+        }
+        return true;
     }
 
     /*
@@ -160,9 +279,18 @@ public class GUI extends JFrame {
             String command = act.getActionCommand();
 
             if (command.equals("Создать бд")) {
-                // при создании не нужно создавать новую роль админа,
-                // тк администратор имеет право на создание и управление(с правами администратора)бд
-                // создаем бд, подключаемся к ней
+                System.exit(0);
+                // окно считывания имени
+                String nameNewDB =
+                JOptionPane.showInputDialog(GUI.this,
+                        "Введите название новой базы данных");
+                if (nameNewDB == null) {
+                    return;
+                }
+                // создаем бд
+                if (Main.createDB(Main.current,nameNewDB, GUI.this) == false){
+                    return;
+                }
                 // закрываем текущее соединение
                 try {
                     Main.current.close();
@@ -170,15 +298,96 @@ public class GUI extends JFrame {
                     JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
                             "Ошибка",
                             JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
+                // подключаемся к новой бд
+                String url = "jdbc:postgresql://127.0.0.1:5432/" + nameNewDB;
+                try {
+                    Class.forName("org.postgresql.Driver");
+                    Main.current = DriverManager.getConnection(url, Main.Admin, Main.AdminPassword);
+                }
+                catch (SQLException |ClassNotFoundException ex){
+                    JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
+                            "Ошибка",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                // выдаем права администратору на новую бд
+                // он создал и является владельцем, поэтому права у него уже есть
                 // создаем все хранимые процедуры
             }
 
             if (command.equals("Подключиться к бд")) {
-                // не нужно создавать новую роль гостя, тк
-                // изначально выдадим гостю права на подключение к другим бд (с такими же правами доступа)
+                String nameNewDB =
+                        JOptionPane.showInputDialog(GUI.this,
+                                "Введите название новой базы данных");
+                if (nameNewDB == null) {
+                    return;
+                }
+                String password =
+                        JOptionPane.showInputDialog(GUI.this,
+                                "Введите пароль");
+                if (password == null) {
+                    return;
+                }
+
+                // выполнение хранимой процедуры
+                if (Main.role.equals("guest")){
+                    try{
+                        CallableStatement cst = null;
+                        cst = Main.current.prepareCall("{call rightToConnect (?)}");
+                        cst.setString(1, nameNewDB);
+                        cst.execute();
+                        cst.close();
+                    }
+                    catch (SQLException ex){
+                        JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
+                                "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+
+                // подключение к бд
+                String url = "jdbc:postgresql://127.0.0.1:5432/" + nameNewDB;
+                try {
+                    Class.forName("org.postgresql.Driver");
+                    Connection effort = DriverManager.getConnection(url, Main.role, password);
+                    JOptionPane.showMessageDialog(GUI.this, "Подключение установлено!",
+                            "Успешное подключение",
+                            JOptionPane.PLAIN_MESSAGE);
+                    effort.close();
+                    Main.current = DriverManager.getConnection(url, Main.role, password);
+                } catch (ClassNotFoundException | SQLException e) {
+                    JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
+                            "Ошибка",
+                            JOptionPane.ERROR_MESSAGE);
+                    //System.out.println( e.getMessage());
+                    return;
+                }
+
+                // выполнение хранимой процедуры
+                if (Main.role.equals("guest")){
+                    try{
+                        CallableStatement cst = null;
+                        cst = Main.current.prepareCall("{call rightToSelect (?)}");
+                        cst.setString(1, nameNewDB);
+                        cst.execute();
+                        cst.close();
+                    }
+                    catch (SQLException ex){
+                        JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
+                                "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+
+                // визуализация таблицы
+                
 
             }
         }
     }
 }
+

@@ -3,27 +3,51 @@ import java.sql.*;
 
 public class Main {
     public static String role = "";
-    private static final String Admin = "postgres";
-    private static final String AdminPassword = "postgres123";
-    private static final String Guest = "guest";
-    private static final String GuestPassword = "guest123";
+    public static final String Admin = "admin";
+    public static final String AdminPassword = "admin123";
+    public static final String Guest = "guest";
+    public static final String GuestPassword = "guest123";
     public static Connection current = null;
 // пример хранимой процедуры + ее вызов
-    public static boolean createGuest(Connection a, GUI gui){
+    public static boolean createGuest(Connection a){
         String ProcedureSQL = """
                 CREATE OR REPLACE FUNCTION createGuestRoleIfNotExists()
                 RETURNS void
                 AS $$
                 BEGIN
-                -- перепроверь
-                    -- создание роли, если ее нет
-                    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'guest123') THEN
-                        CREATE ROLE admin123 WITH CREATEDB LOGIN PASSWORD 'guest123';
+                    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'guest') THEN
+                        CREATE ROLE guest WITH LOGIN PASSWORD 'guest123';
                     END IF;
-                    -- разрешение на подключение к новым бд
-                    GRANT CONNECT ON DATABASE new_database TO guest;
-                    GRANT USAGE ON SCHEMA public TO guest;
-                    GRANT SELECT ON ALL TABLES IN SCHEMA public TO guest;
+                END;
+                $$
+                LANGUAGE plpgsql;
+                """;
+        try{
+            // Создание процедуры
+            Statement st = null;
+            st = a.createStatement();
+            st.execute(ProcedureSQL);
+            // Вызов процедуры
+            CallableStatement cst = null;
+            cst = a.prepareCall("{call createGuestRoleIfNotExists()}");
+            cst.execute();
+            //Закрытие
+            st.close(); cst.close();
+        }
+        catch (SQLException ex){
+            return false;
+        }
+        return true;
+    }
+    public static boolean createAdmin(Connection a){
+        String ProcedureSQL = """
+                CREATE OR REPLACE FUNCTION createAdminRoleIfNotExists()
+                RETURNS void
+                AS $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin') THEN
+                        CREATE ROLE admin WITH LOGIN PASSWORD 'admin123' CREATEDB;
+                    END IF;
                 END;
                 $$
                 LANGUAGE plpgsql;
@@ -41,13 +65,48 @@ public class Main {
             st.close(); cst.close();
         }
         catch (SQLException ex){
-            JOptionPane.showMessageDialog(gui, "Ошибка при подключении",
-                    "Ошибка",
-                    JOptionPane.ERROR_MESSAGE);
             return false;
         }
         return true;
     }
+    public static boolean createDB(Connection a, String nameBD, GUI gui){
+        String ProcedureSQL = """
+                CREATE OR REPLACE FUNCTION createDB(dbname TEXT)
+                RETURNS VOID
+                AS $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = dbname) THEN
+                    EXECUTE format('CREATE DATABASE %I', dbname);
+                    ELSE
+                        RAISE EXCEPTION 'База данных % уже существует', dbname;
+                    END IF;
+                END;
+                $$
+                LANGUAGE plpgsql;
+                """;
+        try{
+            // Создание процедуры
+            Statement st = null;
+            st = a.createStatement();
+            st.execute(ProcedureSQL);
+            // Вызов процедуры
+            CallableStatement cst = null;
+            cst = a.prepareCall("{call createDB(?)}");
+            cst.setString(1, nameBD);
+            cst.execute();
+            //Закрытие
+            st.close(); cst.close();
+        }
+        catch (SQLException ex){
+            JOptionPane.showMessageDialog(gui, "Ошибка при создании",
+                    "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
+            System.out.print("here");System.out.println( ex.getMessage());
+            return false;
+        }
+        return true;
+    }
+
 
     public static void main(String[] args) {
 
@@ -56,14 +115,23 @@ public class Main {
         gui.setVisible(true);
         role = Access.showAccessDialog();
         if (role == null) System.exit(0);
-        // подключаемся к бд postgres c базовой ролью postgres (у нее есть все права доступа)
-        // по факту - admin
-        if (role.equals("Admin")) {
+        // подключаемся к бд postgres
+        else {
             // протокол
             String url = "jdbc:postgresql://127.0.0.1:5432/postgres";
             try {
                 Class.forName("org.postgresql.Driver");
-                current = DriverManager.getConnection(url, Admin, AdminPassword);
+                current = DriverManager.getConnection(url, "postgres", "postgres123");
+                if (role.equals("guest")){
+                    if (createGuest(current) == true){
+                        current.close();
+                        current = DriverManager.getConnection(url, Guest, GuestPassword);
+                    }
+                }
+                else if (createAdmin(current) == true){
+                    current.close();
+                    current = DriverManager.getConnection(url, Admin, AdminPassword);
+                }
                 JOptionPane.showMessageDialog(gui, "Подключение установлено!",
                         "Успешное подключение",
                         JOptionPane.PLAIN_MESSAGE);
@@ -75,6 +143,5 @@ public class Main {
                 System.exit(0);
             }
         }
-
     }
 }
