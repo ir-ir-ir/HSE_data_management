@@ -200,50 +200,7 @@ public class GUI extends JFrame {
         }
         return true;
     }
-    private boolean rightToConnectForGuest(){
-        // право на подключение
-        String rightToConnect = """
-                        CREATE OR REPLACE FUNCTION rightToConnect(dbname TEXT)
-                        RETURNS void
-                        AS $$
-                        BEGIN
-                            GRANT CONNECT ON DATABASE dbname TO guest;
-                        END;
-                        $$
-                        LANGUAGE plpgsql;
-                        """;
-        try {
-            Statement st = null;
-            st = Main.current.createStatement();
-            st.execute(rightToConnect);
-            st.close();}
-        catch (SQLException ex){
-            return false;
-        }
-        return true;
-    }
-    private boolean rightToSelectForGuest(){
-        //право на просмотр
-        String rightToSelect = """
-                        CREATE OR REPLACE FUNCTION rightToSelect(dbname TEXT)
-                        RETURNS void
-                        AS $$
-                        BEGIN
-                            GRANT SELECT ON ALL TABLES IN SCHEMA public TO guest;
-                        END;
-                        $$
-                        LANGUAGE plpgsql;
-                        """;
-        try {
-            Statement st = null;
-            st = Main.current.createStatement();
-            st.execute(rightToSelect);
-            st.close();}
-        catch (SQLException ex){
-            return false;
-        }
-        return true;
-    }
+
     private static boolean createDB(Connection a, String nameBD, GUI gui){
         boolean dbExists = false;
         try {
@@ -392,7 +349,7 @@ public class GUI extends JFrame {
                     return;
                 }
                 // админ создает бд
-                if (!createDB(Main.current, nameNewDB, GUI.this)) return;
+                if (!createDB(Main.current, nameNewDB, GUI.this)) return; //см строку 354
 
                 // если где-то ниже ошибка - вызвать удаление бд,
 
@@ -413,25 +370,24 @@ public class GUI extends JFrame {
             }
 
             if (command.equals("Подключиться к бд")) {
-                System.exit(0);
+
                 String nameNewDB =
                         JOptionPane.showInputDialog(GUI.this,
                                 "Введите название новой базы данных");
-                if (nameNewDB == null) {
-                    return;
-                }
-                String password =
+                if (nameNewDB == null)  return;
+
+                /*String password =
                         JOptionPane.showInputDialog(GUI.this,
                                 "Введите пароль");
-                if (password == null) {
-                    return;
-                }
+                if (password == null)  return;*/
 
-                // выполнение хранимой процедуры
+                // подключаем postgres к новой бд
+                if (Main.role.equals("guest")) {if (!establishPostgresConnection(GUI.this, nameNewDB)) return;}
+                // даем гостю право на подключение к бд
                 if (Main.role.equals("guest")){
                     try{
                         CallableStatement cst = null;
-                        cst = Main.current.prepareCall("{call rightToConnect (?)}");
+                        cst = Main.current.prepareCall("{call rightToConnectForGuest (?)}");
                         cst.setString(1, nameNewDB);
                         cst.execute();
                         cst.close();
@@ -440,48 +396,46 @@ public class GUI extends JFrame {
                         JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
                                 "Ошибка",
                                 JOptionPane.ERROR_MESSAGE);
+                        System.out.println(ex.getMessage());
                         return;
                     }
                 }
-
-                // подключение к бд
-                String url = "jdbc:postgresql://127.0.0.1:5432/" + nameNewDB;
-                try {
-                    Class.forName("org.postgresql.Driver");
-                    Connection effort = DriverManager.getConnection(url, Main.role, password);
+                // даем гостю право на select
+                if (Main.role.equals("guest")){
+                    try{
+                        CallableStatement cst = null;
+                        cst = Main.current.prepareCall("{call rightToSelectForGuest ()}");
+                        cst.execute();
+                        cst.close();
+                    }
+                    catch (SQLException ex){
+                        JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
+                                "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                        System.out.println(ex.getMessage());
+                        return;
+                    }
+                }
+                // отключаем postgres от новой бд
+                if (Main.role.equals("guest")) {if (!closeConnection(GUI.this, Main.connForPostgres)) return;}
+                // подключаем пользователя к новой бд
+                if (Main.role.equals("guest")){
+                    if (!closeConnection(GUI.this, Main.current)) return;
+                    if (!establishConnectionCurrent(nameNewDB,Main.Guest, Main.GuestPassword, GUI.this)) return;
                     JOptionPane.showMessageDialog(GUI.this, "Подключение установлено!",
                             "Успешное подключение",
                             JOptionPane.PLAIN_MESSAGE);
-                    effort.close();
-                    Main.current = DriverManager.getConnection(url, Main.role, password);
-                } catch (ClassNotFoundException | SQLException e) {
-                    JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
-                            "Ошибка",
-                            JOptionPane.ERROR_MESSAGE);
-                    //System.out.println( e.getMessage());
-                    return;
                 }
-
-                // выполнение хранимой процедуры
-                if (Main.role.equals("guest")){
-                    try{
-                        CallableStatement cst = null;
-                        cst = Main.current.prepareCall("{call rightToSelect (?)}");
-                        cst.setString(1, nameNewDB);
-                        cst.execute();
-                        cst.close();
-                    }
-                    catch (SQLException ex){
-                        JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
-                                "Ошибка",
-                                JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
+                else if (Main.role.equals("admin")){
+                    if (!closeConnection(GUI.this, Main.current)) return;
+                    if (!establishConnectionCurrent(nameNewDB,Main.Admin, Main.AdminPassword, GUI.this)) return;
+                    JOptionPane.showMessageDialog(GUI.this, "Подключение установлено!",
+                            "Успешное подключение",
+                            JOptionPane.PLAIN_MESSAGE);
                 }
 
                 // визуализация таблицы
-                
-
+                // to be continued ...
             }
         }
     }
