@@ -8,6 +8,7 @@ public class Main {
     public static final String Guest = "guest";
     public static final String GuestPassword = "guest123";
     public static Connection current = null;
+    public static Connection connForPostgres = null;
 // пример хранимой процедуры + ее вызов
     public static boolean createGuest(Connection a){
         String ProcedureSQL = """
@@ -69,44 +70,6 @@ public class Main {
         }
         return true;
     }
-    public static boolean createDB(Connection a, String nameBD, GUI gui){
-        String ProcedureSQL = """
-                CREATE OR REPLACE FUNCTION createDB(dbname TEXT)
-                RETURNS VOID
-                AS $$
-                BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = dbname) THEN
-                    EXECUTE format('CREATE DATABASE %I', dbname);
-                    ELSE
-                        RAISE EXCEPTION 'База данных % уже существует', dbname;
-                    END IF;
-                END;
-                $$
-                LANGUAGE plpgsql;
-                """;
-        try{
-            // Создание процедуры
-            Statement st = null;
-            st = a.createStatement();
-            st.execute(ProcedureSQL);
-            // Вызов процедуры
-            CallableStatement cst = null;
-            cst = a.prepareCall("{call createDB(?)}");
-            cst.setString(1, nameBD);
-            cst.execute();
-            //Закрытие
-            st.close(); cst.close();
-        }
-        catch (SQLException ex){
-            JOptionPane.showMessageDialog(gui, "Ошибка при создании",
-                    "Ошибка",
-                    JOptionPane.ERROR_MESSAGE);
-            System.out.print("here");System.out.println( ex.getMessage());
-            return false;
-        }
-        return true;
-    }
-
 
     public static void main(String[] args) {
 

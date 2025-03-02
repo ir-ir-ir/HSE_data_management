@@ -114,9 +114,10 @@ public class GUI extends JFrame {
         add(new JScrollPane(dataBase));
     }
 
-    private void textOfProcedures (){
+    private boolean createProcedures (Connection a, GUI gui){
         String createTable = """
                 CREATE OR REPLACE FUNCTION createTable()
+                RETURNS void
                 AS $$
                 BEGIN
                     -- Проверка на существование таблицы GIA
@@ -132,7 +133,7 @@ public class GUI extends JFrame {
                             City TEXT NOT NULL,
                             School TEXT NOT NULL,
                             AverageScore FLOAT NOT NULL,
-                            ListOfSubjects NOT NULL
+                            ListOfSubjects TEXT NOT NULL
                         );
                     END IF;
                 END;
@@ -140,6 +141,7 @@ public class GUI extends JFrame {
                 """;
         String clearTable = """
                 CREATE OR REPLACE FUNCTION clearTableIfExists()
+                RETURNS void
                 AS $$
                 BEGIN
                     IF EXISTS (
@@ -155,20 +157,6 @@ public class GUI extends JFrame {
                     END IF;
                 END;
                 $$ LANGUAGE plpgsql;
-                """;
-        String createDB = """
-                CREATE OR REPLACE FUNCTION createDB(dbname TEXT)
-                RETURNS VOID
-                AS $$
-                BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = dbname) THEN
-                    EXECUTE format('CREATE DATABASE %I', dbname);
-                    ELSE
-                        RAISE EXCEPTION 'База данных % уже существует', dbname;
-                    END IF;
-                END;
-                $$
-                LANGUAGE plpgsql;
                 """;
         String dropDB = """
                 CREATE OR REPLACE FUNCTION dropDataBaseIfExists(dbname TEXT)
@@ -193,6 +181,24 @@ public class GUI extends JFrame {
                 END;
                 $$ LANGUAGE plpgsql;
                 """;
+        try{
+            // Создание процедуры
+            Statement st = null;
+            st = a.createStatement();
+            st.execute(createTable);
+            st.execute(clearTable);
+            st.execute(dropDB);
+            //Закрытие
+            st.close();
+        }
+        catch (SQLException ex){
+            JOptionPane.showMessageDialog(gui, "Ошибка при создании",
+                    "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
+            System.out.println(ex.getMessage());
+            return false;
+        }
+        return true;
     }
     private boolean rightToConnectForGuest(){
         // право на подключение
@@ -238,6 +244,93 @@ public class GUI extends JFrame {
         }
         return true;
     }
+    private static boolean createDB(Connection a, String nameBD, GUI gui){
+        boolean dbExists = false;
+        try {
+            ResultSet rs = a.getMetaData().getCatalogs();
+            while (rs.next()) {
+                String existingDbName = rs.getString(1);
+                if (existingDbName.equals(nameBD)) {
+                    dbExists = true;
+                    break;}
+            }
+            if (!dbExists) {
+                Statement stmt = null;
+                stmt = a.createStatement();
+                String sql = "CREATE DATABASE " + nameBD;
+                stmt.executeUpdate(sql);
+                JOptionPane.showMessageDialog(gui, "База данных успешно создана!",
+                        "Успешное выполнение",
+                        JOptionPane.PLAIN_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(gui, "База данных с таким названием уже существует",
+                        "Запрос не выполнен",
+                        JOptionPane.ERROR_MESSAGE);
+                return false;
+            }}
+        catch (SQLException ex){
+            JOptionPane.showMessageDialog(gui, "Ошибка при создании",
+                    "Запрос не выполнен",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+    private static boolean establishConnectionCurrent(String nameDB, String login, String password, GUI gui){
+        String url = "jdbc:postgresql://127.0.0.1:5432/" + nameDB;
+        try {
+            Class.forName("org.postgresql.Driver");
+            Main.current = DriverManager.getConnection(url, login, password);
+        }
+        catch (SQLException |ClassNotFoundException ex){
+            JOptionPane.showMessageDialog(gui, "Ошибка при подключении",
+                    "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
+            System.out.println(ex.getMessage());
+            return false;
+        }
+        return true;
+    }
+    private static boolean closeConnection (GUI gui, Connection conn){
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(gui, "Ошибка при подключении",
+                    "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+    private static boolean establishPostgresConnection(GUI gui, String nameBD){
+        String url = "jdbc:postgresql://127.0.0.1:5432/" + nameBD;
+        try {
+            Class.forName("org.postgresql.Driver");
+            Main.connForPostgres = DriverManager.getConnection(url, "postgres", "postgres123");
+        }
+        catch (SQLException |ClassNotFoundException ex){
+            JOptionPane.showMessageDialog(gui, "Ошибка при подключении",
+                    "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+    private static boolean callSqlFunction (String functionName, GUI gui){
+        CallableStatement cst = null;
+        try {
+            cst = Main.current.prepareCall(functionName);
+            cst.execute();
+            cst.close();
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(gui, "Ошибка при выполнении операции",
+                    "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
+            System.out.println(e.getMessage());
+            return false;
+        }
+        return true;
+    }
 
     /*
     // при открытии и создании выводим таблицу
@@ -279,45 +372,48 @@ public class GUI extends JFrame {
             String command = act.getActionCommand();
 
             if (command.equals("Создать бд")) {
-                System.exit(0);
-                // окно считывания имени
+                // пользователь вводит название новой бд
                 String nameNewDB =
                 JOptionPane.showInputDialog(GUI.this,
                         "Введите название новой базы данных");
-                if (nameNewDB == null) {
-                    return;
-                }
-                // создаем бд
-                if (Main.createDB(Main.current,nameNewDB, GUI.this) == false){
-                    return;
-                }
-                // закрываем текущее соединение
+                if (nameNewDB == null) return;
+                // подключаемся к postgres от имени postgres, чтобы
+                //        выдать администратору право на выполнение хранимых функций
+                if (!establishPostgresConnection(GUI.this, "postgres")) return;
                 try {
-                    Main.current.close();
+                    Statement st = Main.connForPostgres.createStatement();
+                    st.execute("GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO admin;" );
+                    st.close();
                 } catch (SQLException e) {
-                    JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
+                    JOptionPane.showMessageDialog(GUI.this, "Ошибка при создании",
                             "Ошибка",
                             JOptionPane.ERROR_MESSAGE);
+                    //System.out.println(e.getMessage());
                     return;
                 }
-                // подключаемся к новой бд
-                String url = "jdbc:postgresql://127.0.0.1:5432/" + nameNewDB;
-                try {
-                    Class.forName("org.postgresql.Driver");
-                    Main.current = DriverManager.getConnection(url, Main.Admin, Main.AdminPassword);
-                }
-                catch (SQLException |ClassNotFoundException ex){
-                    JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
-                            "Ошибка",
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                // выдаем права администратору на новую бд
-                // он создал и является владельцем, поэтому права у него уже есть
+                // админ создает бд
+                if (!createDB(Main.current, nameNewDB, GUI.this)) return;
+
+                // если где-то ниже ошибка - вызвать удаление бд,
+
+                // отключаем админа от postgres
+                if (!closeConnection(GUI.this, Main.current)) return;
+                // отключаем postgres от бд postgres
+                if (!closeConnection(GUI.this, Main.connForPostgres)) return;
+                // подключаем postgres к новой бд
+                if (!establishPostgresConnection(GUI.this, nameNewDB)) return;
                 // создаем все хранимые процедуры
+                if (!createProcedures(Main.connForPostgres, GUI.this)) return;
+                // отключаем postgres от новой бд
+                if (!closeConnection(GUI.this, Main.connForPostgres)) return;
+                // подключаем админа к новой бд
+                if (!establishConnectionCurrent(nameNewDB,Main.Admin, Main.AdminPassword, GUI.this)) return;
+                // создаем таблицу
+                if (!callSqlFunction("{call createTable()}", GUI.this)) return;
             }
 
             if (command.equals("Подключиться к бд")) {
+                System.exit(0);
                 String nameNewDB =
                         JOptionPane.showInputDialog(GUI.this,
                                 "Введите название новой базы данных");
