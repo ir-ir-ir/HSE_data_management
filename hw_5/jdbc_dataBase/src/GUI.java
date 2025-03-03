@@ -6,6 +6,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.*;
+import java.util.Locale;
 
 public class GUI extends JFrame {
     private ImageIcon icon;
@@ -278,7 +279,7 @@ public class GUI extends JFrame {
             Main.current = DriverManager.getConnection(url, login, password);
         }
         catch (SQLException |ClassNotFoundException ex){
-            JOptionPane.showMessageDialog(gui, "Ошибка при подключении",
+            JOptionPane.showMessageDialog(gui, "Ошибка при подключении1",
                     "Ошибка",
                     JOptionPane.ERROR_MESSAGE);
             System.out.println(ex.getMessage());
@@ -368,12 +369,105 @@ public class GUI extends JFrame {
             // получаем и анализируем команду
             String command = act.getActionCommand();
 
+            if (command.equals("Подключиться к бд")) {
+
+                String nameNewDB =
+                        JOptionPane.showInputDialog(GUI.this,
+                                "Введите название базы данных");
+                if (nameNewDB == null)  return;
+                nameNewDB = nameNewDB.toLowerCase();
+
+                /*String password =
+                        JOptionPane.showInputDialog(GUI.this,
+                                "Введите пароль");
+                if (password == null)  return;*/
+
+                // подключаем postgres к новой бд
+                if (Main.role.equals("guest")) {if (!establishPostgresConnection(GUI.this, nameNewDB)) return;}
+                // даем гостю право на подключение к бд
+                if (Main.role.equals("guest")){
+                    try(CallableStatement cst = Main.connForPostgres.prepareCall("{call rightToConnectForGuest (?)}")){
+                        cst.setString(1, nameNewDB);
+                        cst.execute();
+                    }
+                    catch (SQLException ex){
+                        JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
+                                "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                        System.out.println(ex.getMessage());
+                        return;
+                    }
+                }
+                // даем гостю право на select
+                if (Main.role.equals("guest")){
+                    try(CallableStatement cst = Main.connForPostgres.prepareCall("{call rightToSelectForGuest ()}")){
+                        cst.execute();
+                    }
+                    catch (SQLException ex){
+                        JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
+                                "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                        System.out.println(ex.getMessage());
+                        return;
+                    }
+                }
+                // отключаем postgres
+                if (Main.role.equals("guest")) {if (!closeConnection(GUI.this, Main.connForPostgres)) return;}
+                // подключаем пользователя к новой бд
+                if (Main.role.equals("guest")){
+                    if (!closeConnection(GUI.this, Main.current)) return;
+                    if (!establishConnectionCurrent(nameNewDB,Main.Guest, Main.GuestPassword, GUI.this)){
+                        // вернуться к старой бд (название бд ты уже где-то извлекала)
+                        return;}
+                    JOptionPane.showMessageDialog(GUI.this, "Подключение установлено!",
+                            "Успешное подключение",
+                            JOptionPane.PLAIN_MESSAGE);
+                }
+                else if (Main.role.equals("admin")){
+                    if (!closeConnection(GUI.this, Main.current)) return;
+                    if (!establishConnectionCurrent(nameNewDB,Main.Admin, Main.AdminPassword, GUI.this)) {
+                        // вернуться к старой бд (название бд ты уже где-то извлекала)
+                        return;}
+                    JOptionPane.showMessageDialog(GUI.this, "Подключение установлено!",
+                            "Успешное подключение",
+                            JOptionPane.PLAIN_MESSAGE);
+                }
+
+                updateTable();
+            }
+
+            if (command.equals("Очистить таблицу")){
+
+                int ans = JOptionPane.showConfirmDialog(GUI.this,
+                        "Вы уверены, что хотите очистить текущую бд?",
+                        "Удаление бд",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+                if (ans != 0) return;
+
+                try(CallableStatement cst = Main.current.prepareCall("{call clearTableIfExists ()}")){
+                    cst.execute();
+                    JOptionPane.showMessageDialog(GUI.this, "Таблица очищена!",
+                            "Успешное выполнение",
+                            JOptionPane.PLAIN_MESSAGE);
+                }
+                catch (SQLException ex){
+                    JOptionPane.showMessageDialog(GUI.this, "Ошибка при очистке",
+                            "Ошибка",
+                            JOptionPane.ERROR_MESSAGE);
+                    System.out.println(ex.getMessage());
+                    return;
+                }
+                updateTable();
+            }
+
             if (command.equals("Создать бд")) {
                 // пользователь вводит название новой бд
                 String nameNewDB =
-                JOptionPane.showInputDialog(GUI.this,
-                        "Введите название новой базы данных");
+                        JOptionPane.showInputDialog(GUI.this,
+                                "Введите название новой базы данных");
                 if (nameNewDB == null) return;
+                nameNewDB = nameNewDB.toLowerCase();
                 // подключаемся к postgres от имени postgres, чтобы
                 //        выдать администратору право на выполнение хранимых функций
                 if (!establishPostgresConnection(GUI.this, "postgres")) return;
@@ -417,68 +511,6 @@ public class GUI extends JFrame {
                 if (!establishConnectionCurrent(nameNewDB,Main.Admin, Main.AdminPassword, GUI.this)) return;
                 // создаем таблицу
                 if (!callSqlFunction("{call createTable()}", GUI.this)) return;
-            }
-
-            if (command.equals("Подключиться к бд")) {
-
-                String nameNewDB =
-                        JOptionPane.showInputDialog(GUI.this,
-                                "Введите название базы данных");
-                if (nameNewDB == null)  return;
-
-                /*String password =
-                        JOptionPane.showInputDialog(GUI.this,
-                                "Введите пароль");
-                if (password == null)  return;*/
-
-                // подключаем postgres к новой бд
-                if (Main.role.equals("guest")) {if (!establishPostgresConnection(GUI.this, nameNewDB)) return;}
-                // даем гостю право на подключение к бд
-                if (Main.role.equals("guest")){
-                    try(CallableStatement cst = Main.connForPostgres.prepareCall("{call rightToConnectForGuest (?)}")){
-                        cst.setString(1, nameNewDB);
-                        cst.execute();
-                    }
-                    catch (SQLException ex){
-                        JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
-                                "Ошибка",
-                                JOptionPane.ERROR_MESSAGE);
-                        System.out.println(ex.getMessage());
-                        return;
-                    }
-                }
-                // даем гостю право на select
-                if (Main.role.equals("guest")){
-                    try(CallableStatement cst = Main.connForPostgres.prepareCall("{call rightToSelectForGuest ()}")){
-                        cst.execute();
-                    }
-                    catch (SQLException ex){
-                        JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
-                                "Ошибка",
-                                JOptionPane.ERROR_MESSAGE);
-                        System.out.println(ex.getMessage());
-                        return;
-                    }
-                }
-                // отключаем postgres
-                if (Main.role.equals("guest")) {if (!closeConnection(GUI.this, Main.connForPostgres)) return;}
-                // подключаем пользователя к новой бд
-                if (Main.role.equals("guest")){
-                    if (!closeConnection(GUI.this, Main.current)) return;
-                    if (!establishConnectionCurrent(nameNewDB,Main.Guest, Main.GuestPassword, GUI.this)) return;
-                    JOptionPane.showMessageDialog(GUI.this, "Подключение установлено!",
-                            "Успешное подключение",
-                            JOptionPane.PLAIN_MESSAGE);
-                }
-                else if (Main.role.equals("admin")){
-                    if (!closeConnection(GUI.this, Main.current)) return;
-                    if (!establishConnectionCurrent(nameNewDB,Main.Admin, Main.AdminPassword, GUI.this)) return;
-                    JOptionPane.showMessageDialog(GUI.this, "Подключение установлено!",
-                            "Успешное подключение",
-                            JOptionPane.PLAIN_MESSAGE);
-                }
-
-                updateTable();
             }
 
             if (command.equals("Удалить бд")){
@@ -550,6 +582,106 @@ public class GUI extends JFrame {
                 }*/
                 }
 
+            }
+
+            if (command.equals("Создать запись")){
+                JDialog dialog = new JDialog(GUI.this, "Добавление д/з", true);
+                dialog.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+                dialog.setSize(500, 430);
+                dialog.setLocationRelativeTo(null);
+                dialog.setResizable(false);
+
+                JPanel inputPanel = new JPanel();
+                inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
+
+                // Поля для ввода данных
+                JTextField subject = new JTextField(10);
+                JTextField dateDay = new JTextField(5);
+                JTextField dateMonth = new JTextField(5);
+                JTextField dateYear = new JTextField(5);
+                JTextField groups = new JTextField(15);
+                JTextArea description = new JTextArea(10, 40);
+                description.setLineWrap(true);
+                description.setWrapStyleWord(true);
+
+                // Подписи к полям для ввода данных
+                JLabel subjectLabel = new JLabel("Название предмета: ");
+                JLabel dateDayLabel = new JLabel("День: ");
+                JLabel dateMonthLabel = new JLabel("Месяц: ");
+                JLabel dateYearLabel = new JLabel("Год: ");
+                JLabel numbersGroupsLabel = new JLabel("Номера групп: ");
+
+                // Панель с вводом названия предмета
+                JPanel subjectPanel = new JPanel();
+                subjectPanel.add(subjectLabel);
+                subjectPanel.add(subject);
+
+                // Панель с вводом дня сдачи
+                JPanel day = new JPanel();
+                day.add(dateDayLabel);
+                day.add(dateDay);
+
+                // Панель с вводом месяца сдачи
+                JPanel month = new JPanel();
+                month.add(dateMonthLabel);
+                month.add(dateMonth);
+
+                // Панель с вводом года сдачи
+                JPanel year = new JPanel();
+                year.add(dateYearLabel);
+                year.add(dateYear);
+
+                // Панель с полным вводом срока сдачи
+                JPanel datePanel = new JPanel();
+                datePanel.setLayout(new BoxLayout(datePanel, BoxLayout.Y_AXIS));
+                datePanel.add(day);
+                datePanel.add(month);
+                datePanel.add(year);
+
+                // Панель с вводом номеров групп
+                JPanel numbersGroupsPanel = new JPanel();
+                numbersGroupsPanel.add(numbersGroupsLabel);
+                numbersGroupsPanel.add(groups);
+
+                // Панель с описанием д/з
+                JPanel descriptionPanel = new JPanel();
+                JScrollPane scrollPane = new JScrollPane(description);
+                descriptionPanel.add(scrollPane);
+                scrollPane.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createTitledBorder(
+                                BorderFactory.createLineBorder(Color.GRAY, 1),
+                                "Описание:"),
+                        BorderFactory.createEmptyBorder(2, 2, 2, 2)));
+
+                // Панель с кнопками
+                JPanel buttonPanel = new JPanel();
+                JButton toAdd = new JButton("Добавить");
+                JButton cancel = new JButton("Отмена");
+                buttonPanel.add(toAdd);
+                buttonPanel.add(cancel);
+
+                // Добавление панелей в общую панель ввода
+                inputPanel.add(subjectPanel);
+                inputPanel.add(datePanel);
+                inputPanel.add(numbersGroupsPanel);
+                inputPanel.add(descriptionPanel);
+
+                // Размещение на диалоговом окне
+                dialog.add(BorderLayout.NORTH, inputPanel);
+                dialog.add(BorderLayout.SOUTH, buttonPanel);
+
+                // Слушатели кнопок
+                toAdd.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                                            }
+                }
+                cancel.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        dialog.dispose();
+                    }
+                });
+
+                dialog.setVisible(true);
             }
         }
     }
