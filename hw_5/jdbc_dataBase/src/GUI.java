@@ -135,6 +135,8 @@ public class GUI extends JFrame {
                             AverageScore FLOAT NOT NULL,
                             ListOfSubjects TEXT NOT NULL
                         );
+                        RAISE INFO 'Таблица создана';
+                    ELSE RAISE INFO 'Таблица уже существует';
                     END IF;
                 END;
                 $$ LANGUAGE plpgsql;
@@ -150,7 +152,7 @@ public class GUI extends JFrame {
                         WHERE table_name = 'gia'
                           AND table_schema = 'public'
                     ) THEN
-                        EXECUTE format('TRUNCATE TABLE %I', 'gia' );
+                        TRUNCATE TABLE gia;
                         RAISE INFO 'Таблица очищена';
                     ELSE
                         RAISE INFO 'Таблица не существует';
@@ -158,6 +160,7 @@ public class GUI extends JFrame {
                 END;
                 $$ LANGUAGE plpgsql;
                 """;
+        // исправить на дблинк или не использовать
         String dropDB = """
                 CREATE OR REPLACE FUNCTION dropDataBaseIfExists(dbname TEXT)
                 RETURNS VOID
@@ -168,19 +171,50 @@ public class GUI extends JFrame {
                         FROM pg_database
                         WHERE datname = dbname
                     ) THEN
-                    -- завершение всех активных подключений к базе данных
-                        PERFORM pg_terminate_backend(pg_stat_activity.pid)
-                        FROM pg_stat_activity
-                        WHERE pg_stat_activity.datname = dbname;
-                
                         EXECUTE format('DROP DATABASE %I', dbname);
                         RAISE INFO 'База данных "%" удалена.', dbname;
                     ELSE
-                        RAISE EXCEPTION 'База данных "%" не существует.', dbname;
+                        RAISE INFO 'База данных "%" не существует.', dbname;
                     END IF;
                 END;
                 $$ LANGUAGE plpgsql;
                 """;
+        String selectAllTable = """
+                CREATE OR REPLACE FUNCTION selectAllTable()
+                RETURNS TABLE (
+                    id INT,
+                    FIO TEXT,
+                    City TEXT,
+                    School TEXT,
+                    AverageScore FLOAT,
+                    ListOfSubject TEXT
+                ) AS $$
+                BEGIN
+                    RETURN QUERY SELECT * FROM gia;
+                END;
+                $$ LANGUAGE plpgsql;
+                """;
+
+        String rightToConnectForGuest = """
+                        CREATE OR REPLACE FUNCTION rightToConnectForGuest(dbname TEXT)
+                        RETURNS void
+                        AS $$
+                        BEGIN
+                             EXECUTE format('GRANT CONNECT ON DATABASE %I TO guest', dbname);
+                        END;
+                        $$
+                        LANGUAGE plpgsql;
+                        """;
+        String rightToSelectForGuest = """
+                        CREATE OR REPLACE FUNCTION rightToSelectForGuest()
+                        RETURNS void
+                        AS $$
+                        BEGIN
+                            GRANT SELECT ON ALL TABLES IN SCHEMA public TO guest;
+                        END;
+                        $$
+                        LANGUAGE plpgsql;
+                        """;
         try{
             // Создание процедуры
             Statement st = null;
@@ -188,6 +222,9 @@ public class GUI extends JFrame {
             st.execute(createTable);
             st.execute(clearTable);
             st.execute(dropDB);
+            st.execute(selectAllTable);
+            st.execute(rightToConnectForGuest);
+            st.execute(rightToSelectForGuest);
             //Закрытие
             st.close();
         }
@@ -229,6 +266,7 @@ public class GUI extends JFrame {
             JOptionPane.showMessageDialog(gui, "Ошибка при создании",
                     "Запрос не выполнен",
                     JOptionPane.ERROR_MESSAGE);
+            System.out.println(ex.getMessage());
             return false;
         }
         return true;
@@ -289,38 +327,40 @@ public class GUI extends JFrame {
         return true;
     }
 
-    /*
-    // при открытии и создании выводим таблицу
-    private void table(){
-        // визуализация таблицы
-        try(FileReader rf = new FileReader(filePath);
-            BufferedReader bf = new BufferedReader(rf)) {
-            // заполнение массива строк
-            String theLine;
-            String first = bf.readLine();
-            while ((theLine = bf.readLine()) != null){
+    // визуализация таблицы
+    private void cleanTable() {
+        DefaultTableModel model = (DefaultTableModel)dataBase.getModel();
+        model.setRowCount(0);
+    }
+    private void addRow(String id, String FIO, String City, String School, String AverageScore, String ListOfSubject) {
+        DefaultTableModel model = (DefaultTableModel)dataBase.getModel();
+        model.addRow(new Object[]{id, FIO, City, School, AverageScore, ListOfSubject});
+    }
+    private void updateTable() {
+        cleanTable();
+        try(CallableStatement cst = Main.current.prepareCall("{call selectAllTable ()}")){
+            cst.execute();
+            try (ResultSet rs = cst.getResultSet()) {
+                cleanTable();
+                while (rs.next()) {
+                    String id = rs.getString("id");
+                    String FIO = rs.getString("FIO");
+                    String City = rs.getString("City");
+                    String School = rs.getString("School");
+                    String AverageScore = rs.getString("AverageScore");
+                    String ListOfSubject = rs.getString("ListOfSubject");
 
-                model.addRow(parsing(theLine));
+                    addRow(id, FIO, City, School, AverageScore, ListOfSubject);
+                }
             }
         }
-        catch(Exception ex){
+        catch (SQLException ex){
+            JOptionPane.showMessageDialog(GUI.this, "Ошибка при отображении таблицы",
+                    "Ошибка",
+                    JOptionPane.ERROR_MESSAGE);
+            System.out.println(ex.getMessage());
         }
     }
-    private void table_(){
-        // визуализация таблицы
-        try(FileReader rf = new FileReader("copy.txt");
-            BufferedReader bf = new BufferedReader(rf)) {
-            // заполнение массива строк
-            String theLine;
-            String first = bf.readLine();
-            while ((theLine = bf.readLine()) != null){
-
-                model.addRow(parsing(theLine));
-            }
-        }
-        catch(Exception ex){
-        }
-    }*/
 
     private class Listener implements ActionListener {
         @Override
@@ -337,15 +377,13 @@ public class GUI extends JFrame {
                 // подключаемся к postgres от имени postgres, чтобы
                 //        выдать администратору право на выполнение хранимых функций
                 if (!establishPostgresConnection(GUI.this, "postgres")) return;
-                try {
-                    Statement st = Main.connForPostgres.createStatement();
+                try (Statement st = Main.connForPostgres.createStatement()){
                     st.execute("GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO admin;" );
-                    st.close();
                 } catch (SQLException e) {
                     JOptionPane.showMessageDialog(GUI.this, "Ошибка при создании",
                             "Ошибка",
                             JOptionPane.ERROR_MESSAGE);
-                    //System.out.println(e.getMessage());
+                    System.out.println(e.getMessage());
                     return;
                 }
                 // админ создает бд
@@ -361,6 +399,18 @@ public class GUI extends JFrame {
                 if (!establishPostgresConnection(GUI.this, nameNewDB)) return;
                 // создаем все хранимые процедуры
                 if (!createProcedures(Main.connForPostgres, GUI.this)) return;
+                // забираем права у админа на выполнение некоторых хранимых процедур
+                if (!Main.revokeExecuteFromAdmin(Main.connForPostgres, GUI.this)) return;
+                try(CallableStatement cst = Main.connForPostgres.prepareCall("{call revokeExecuteFromAdmin ()}")){
+                    cst.execute();
+                }
+                catch (SQLException ex){
+                    JOptionPane.showMessageDialog(GUI.this, "Ошибка при создании",
+                            "Ошибка",
+                            JOptionPane.ERROR_MESSAGE);
+                    System.out.println(ex.getMessage());
+                    return;
+                }
                 // отключаем postgres от новой бд
                 if (!closeConnection(GUI.this, Main.connForPostgres)) return;
                 // подключаем админа к новой бд
@@ -373,7 +423,7 @@ public class GUI extends JFrame {
 
                 String nameNewDB =
                         JOptionPane.showInputDialog(GUI.this,
-                                "Введите название новой базы данных");
+                                "Введите название базы данных");
                 if (nameNewDB == null)  return;
 
                 /*String password =
@@ -385,12 +435,9 @@ public class GUI extends JFrame {
                 if (Main.role.equals("guest")) {if (!establishPostgresConnection(GUI.this, nameNewDB)) return;}
                 // даем гостю право на подключение к бд
                 if (Main.role.equals("guest")){
-                    try{
-                        CallableStatement cst = null;
-                        cst = Main.current.prepareCall("{call rightToConnectForGuest (?)}");
+                    try(CallableStatement cst = Main.connForPostgres.prepareCall("{call rightToConnectForGuest (?)}")){
                         cst.setString(1, nameNewDB);
                         cst.execute();
-                        cst.close();
                     }
                     catch (SQLException ex){
                         JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
@@ -402,11 +449,8 @@ public class GUI extends JFrame {
                 }
                 // даем гостю право на select
                 if (Main.role.equals("guest")){
-                    try{
-                        CallableStatement cst = null;
-                        cst = Main.current.prepareCall("{call rightToSelectForGuest ()}");
+                    try(CallableStatement cst = Main.connForPostgres.prepareCall("{call rightToSelectForGuest ()}")){
                         cst.execute();
-                        cst.close();
                     }
                     catch (SQLException ex){
                         JOptionPane.showMessageDialog(GUI.this, "Ошибка при подключении",
@@ -416,7 +460,7 @@ public class GUI extends JFrame {
                         return;
                     }
                 }
-                // отключаем postgres от новой бд
+                // отключаем postgres
                 if (Main.role.equals("guest")) {if (!closeConnection(GUI.this, Main.connForPostgres)) return;}
                 // подключаем пользователя к новой бд
                 if (Main.role.equals("guest")){
@@ -434,8 +478,78 @@ public class GUI extends JFrame {
                             JOptionPane.PLAIN_MESSAGE);
                 }
 
-                // визуализация таблицы
-                // to be continued ...
+                updateTable();
+            }
+
+            if (command.equals("Удалить бд")){
+
+                int ans = JOptionPane.showConfirmDialog(GUI.this,
+                        "Вы уверены, что хотите удалить текущую бд?",
+                        "Удаление бд",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE);
+                if (ans == 0) {
+                    String currentDB = "";
+                    try {
+                        currentDB = Main.current.getCatalog();
+                    } catch (SQLException e) {
+                        JOptionPane.showMessageDialog(GUI.this, "Ошибка при удалении",
+                                "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                        System.out.println(e.getMessage());
+                        return;
+                    }
+
+                    // подключаем пользователя к постгрес, чтобы была возможность удалить текущую бд
+                    closeConnection(GUI.this, Main.current);
+                    String url = "jdbc:postgresql://127.0.0.1:5432/postgres";
+                    // устанавливаем соответствующий логин и пароль
+                    String login; String password;
+                    if (Main.role.equals("guest")) {login = Main.Guest; password = Main.GuestPassword;}
+                    else {login = Main.Admin; password = Main.AdminPassword;}
+                    try {
+                        Class.forName("org.postgresql.Driver");
+                        Main.current = DriverManager.getConnection(url, login,password);
+                        // удаление
+                        // возможно добавить дблинк
+                        String sql = "DROP DATABASE " + currentDB;
+                        try (Statement st = Main.current.createStatement()) {
+                            st.executeUpdate(sql);
+                            JOptionPane.showMessageDialog(GUI.this, "Бд удалена!",
+                                    "Успешное выполнение",
+                                    JOptionPane.PLAIN_MESSAGE);
+                        } catch (SQLException ex) {
+                            JOptionPane.showMessageDialog(GUI.this, "Ошибка при удалении",
+                                    "Ошибка",
+                                    JOptionPane.ERROR_MESSAGE);
+                            System.out.println(ex.getMessage());
+                        }
+                    }
+                    catch (SQLException |ClassNotFoundException ex){
+                        JOptionPane.showMessageDialog(GUI.this, "Ошибка при удалении",
+                                "Ошибка",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                    // удаление
+                    // возможно добавить дблинк
+                    /*try(CallableStatement cst = Main.current.prepareCall("{call dropDataBaseIfExists (?)}")){
+                    cst.setString(1, nameDB);
+                    cst.execute();
+                    SQLWarning message = cst.getWarnings();
+                    String mes =  message.getMessage();
+                    JOptionPane.showMessageDialog(GUI.this, mes,
+                            "Удаление базы данных",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+                catch (SQLException ex){
+                    JOptionPane.showMessageDialog(GUI.this, "Ошибка при удалении",
+                            "Ошибка",
+                            JOptionPane.ERROR_MESSAGE);
+                    System.out.println(ex.getMessage());
+                    return;
+                }*/
+                }
+
             }
         }
     }

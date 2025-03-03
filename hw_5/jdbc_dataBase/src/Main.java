@@ -70,33 +70,23 @@ public class Main {
         }
         return true;
     }
-    public static boolean rightsForGuest(Connection a, GUI gui){
-        String rightToConnectForGuest = """
-                        CREATE OR REPLACE FUNCTION rightToConnectForGuest(dbname TEXT)
-                        RETURNS void
-                        AS $$
-                        BEGIN
-                             EXECUTE format('GRANT CONNECT ON DATABASE %I TO guest', dbname);
-                        END;
-                        $$
-                        LANGUAGE plpgsql;
-                        """;
-        String rightToSelectForGuest = """
-                        CREATE OR REPLACE FUNCTION rightToSelectForGuest()
-                        RETURNS void
-                        AS $$
-                        BEGIN
-                            GRANT SELECT ON ALL TABLES IN SCHEMA public TO guest;
-                        END;
-                        $$
-                        LANGUAGE plpgsql;
-                        """;
+    public static boolean revokeExecuteFromAdmin(Connection a, GUI gui){
+        String revokeExecute = """
+                CREATE OR REPLACE FUNCTION revokeExecuteFromAdmin()
+                RETURNS void
+                AS $$
+                BEGIN
+                    REVOKE EXECUTE ON FUNCTION rightToConnectForGuest(dbname TEXT) FROM admin;
+                    REVOKE EXECUTE ON FUNCTION rightToSelectForGuest() FROM admin;
+                END;
+                $$
+                LANGUAGE plpgsql;
+                """;
         try{
             // Создание процедуры
             Statement st = null;
             st = a.createStatement();
-            st.execute(rightToConnectForGuest);
-            st.execute(rightToSelectForGuest);
+            st.execute(revokeExecute);
             //Закрытие
             st.close();
         }
@@ -125,17 +115,9 @@ public class Main {
                 Class.forName("org.postgresql.Driver");
                 current = DriverManager.getConnection(url, "postgres", "postgres123");
                 if (role.equals("guest")){
-                    if (createGuest(current) == true){
-                        // создаем хранимые функции, чтобы потом через них можно было выдавать права гостю
-                        if (!rightsForGuest(current, gui)) {
-                            JOptionPane.showMessageDialog(gui, "Ошибка при подключении",
-                                    "Ошибка",
-                                    JOptionPane.ERROR_MESSAGE);
-                            System.exit(0);
-                        }
-                        current.close();
-                        current = DriverManager.getConnection(url, Guest, GuestPassword);
-                    }
+                    createGuest(current);
+                    current.close();
+                    current = DriverManager.getConnection(url, Guest, GuestPassword);
                 }
                 else if (createAdmin(current) == true){
                     current.close();
